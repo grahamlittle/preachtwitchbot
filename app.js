@@ -18,40 +18,133 @@ files_.sort();
 console.log("[TWITCHBOT EVENT] AUDIO FILE LIST : " + files_);
 
 // Local storage options for last played file
+// Autosave disabled for now
 console.log("[TWITCHBOT EVENT] Load / Create localised storage");
-var db = new loki('subaudiohistorylist.json', {persistenceMethod:'fs', autoload: true, autoloadCallback: loadHandler});
+var db = new loki('lastfileplayed.json', { 
+	persistenceMethod:'fs', 
+	autoload: true, 
+	autoloadCallback: databaseInitialize
+});
 
-function loadHandler() {
-  var subaudiohistorylist = db.getCollection('subaudiohistorylist');
+// When database is first loaded, check for existing collection
+// where it does not exist then create the collection ready to store data.
+function databaseInitialize() {
+  var lastfileplayed = db.getCollection('lastfileplayed');
 
-  if (!subaudiohistorylist) {
-    subaudiohistorylist = db.addCollection('subaudiohistorylist');
+  if (lastfileplayed == null) {
+	console.log("[TWITCHBOT EVENT] No DB Collection created yet.");
+	lastfileplayed = db.addCollection('lastfileplayed');
+	
+	db.saveDatabase(function(err) {
+		if (err) {
+		  console.log(err);
+		}
+		else {
+		  console.log("[TWITCHBOT EVENT] DB Collection saved in DB Initialisation");
+		}
+	});
+	
+  } else {
+	  
+	console.log("[TWITCHBOT EVENT] DB Collection already created.");
+	
   }
-
-  db.saveDatabase();
+  
+  subNotifier();
 };
 
+// With the lastFilePlayed find the index of that file and return the next file to play
+function getNextFileToPlay(lastFilePlayed) {
 
-// Twitch library options
-var options = {
-	options: {
-		debug: true
-	},
-	connection: {
-		cluster: "aws",
-		reconnect: true
-	},
-	identity: {
-		username: "preachtwitchbot",
-		password: "xxx"
-	},
-	channels: ["preachlfw"]
-};
+	var lastFilePosition = files_.indexOf(lastFilePlayed);
+	
+	return files_[lastFilePosition];	
+}
 
-// Twitch client
-var client = new tmi.client(options);
+function playFile(fileToPlay) {
+
+	console.log("[TWITCHBOT EVENT] Playing next file : " + fileToPlay);
+	
+	console.log("[TWITCHBOT EVENT] Updating DB with latest file played");
+	
+	//Update database with filename played
+	updateDbWithFilePlayed(fileToPlay);
+
+}
+
+function updateDbWithFilePlayed(filePlayed) {
+	var lastfilecollection = db.getCollection("lastfileplayed");
+	var entryCount = lastfilecollection.count();
+	var lastfileplayed;
+	
+	if (entryCount==0) {
+		console.log("[TWITCHBOT EVENT] No entry in DB, create first entry.");
+		lastfilecollection.insert({name:filePlayed,lastplayed:'correct'});
+	} else {
+		console.log("[TWITCHBOT EVENT] Update existing entry in DB.");
+		lastfileplayed = lastfilecollection.find({'lastplayed':'correct'});
+		lastfileplayed.name = filePlayed;
+		lastfileplayed.lastplayed = "correct";
+		lastfilecollection.update(lastfileplayed);
+	}
+	
+	db.saveDatabase(function(err) {
+		if (err) {
+		  console.log(err);
+		}
+		else {
+		  console.log("[TWITCHBOT EVENT] DB Updated with played file : " + filePlayed);
+		}
+	});	
+	
+	console.log("[TWITCHBOT EVENT] DB updated with last file played : name = " + filePlayed);
+}
+
+function subNotifier() {
+	var lastfilecollection = db.getCollection("lastfileplayed");
+	var entryCount = lastfilecollection.count();
+	var now = new Date();
+	var lastaudio = "";
+	var nextaudio = "";
+
+	if (entryCount==0) {
+		console.log("[TWITCHBOT EVENT] No files played yet");
+		console.log("[TWITCHBOT EVENT] The file " + files_[0] + " will be played next.");
+		lastaudio = "none";
+		nextaudio = files_[0];
+	} else {
+		lastaudiorec = lastfilecollection.find({'lastplayed':'correct'});
+		console.log(lastaudiorec);
+		console.log("[TWITCHBOT EVENT] Last file have been played is : " + lastaudiorec.name);
+		lastaudio = lastaudiorec.name;
+		nextaudio = getNextFileToPlay(lastaudiorec.name);
+		console.log("[TWITCHBOT EVENT] Next file to be played is : " + nextaudio);		
+	}
+
+	//Pretend sub event has happened and play file
+	playFile(nextaudio);
+	
+	// Twitch library options
+	var options = {
+		options: {
+			debug: true
+		},
+		connection: {
+			cluster: "aws",
+			reconnect: true
+		},
+		identity: {
+			username: "preachtwitchbot",
+			password: "xxx"
+		},
+		channels: ["preachlfw"]
+	};
+
+	// Twitch client
+	var client = new tmi.client(options);
 
 	console.log("[TWITCHBOT EVENT] Connecting to channel preachlfw");
+	
 	client.connect();
 
 	client.on('connected',function(address,port){
@@ -67,4 +160,5 @@ var client = new tmi.client(options);
     	console.log("[TWITCHBOT EVENT] Channel : " + channel );
     	console.log("[TWITCHBOT EVENT] Username : " + username );
 	});
+}
 
