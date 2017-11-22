@@ -1,9 +1,11 @@
 // npm install tmi.js --save
 // npm install lokijs --save
+// npm install play --save
 // Twitch library
 var tmi = require('tmi.js');
 var loki = require('lokijs');
 var fs = require('fs');
+var Sound = require('node-aplay');
 var files_ = files_ || [];
 
 // Get list of files from the filesystem
@@ -56,20 +58,24 @@ function databaseInitialize() {
 // With the lastFilePlayed find the index of that file and return the next file to play
 function getNextFileToPlay(lastFilePlayed) {
 
+	var totalFileCount = files_.length;
 	var lastFilePosition = files_.indexOf(lastFilePlayed);
+	var nextFilePosition = 0;
+		
+	if (lastFilePosition != (totalFileCount-1)) {
+		nextFilePosition = lastFilePosition + 1;
+	}
 	
-	return files_[lastFilePosition];	
+	return files_[nextFilePosition];	
 }
 
 function playFile(fileToPlay) {
 
-	console.log("[TWITCHBOT EVENT] Playing next file : " + fileToPlay);
+	var nextFileToPlay = "./testfiles/"+fileToPlay;
 	
-	console.log("[TWITCHBOT EVENT] Updating DB with latest file played");
-	
-	//Update database with filename played
-	updateDbWithFilePlayed(fileToPlay);
+	console.log("[TWITCHBOT EVENT] Playing next file : " + nextFileToPlay);
 
+	//new Sound(nextFileToPlay).play();
 }
 
 function updateDbWithFilePlayed(filePlayed) {
@@ -77,12 +83,15 @@ function updateDbWithFilePlayed(filePlayed) {
 	var entryCount = lastfilecollection.count();
 	var lastfileplayed;
 	
+	console.log("[TWITCHBOT EVENT] Updating DB with latest file played");
+	
 	if (entryCount==0) {
 		console.log("[TWITCHBOT EVENT] No entry in DB, create first entry.");
 		lastfilecollection.insert({name:filePlayed,lastplayed:'correct'});
 	} else {
 		console.log("[TWITCHBOT EVENT] Update existing entry in DB.");
-		lastfileplayed = lastfilecollection.find({'lastplayed':'correct'});
+		//lastfileplayed = lastfilecollection.find({'lastplayed':'correct'});
+		lastfileplayed = lastfilecollection.get(1);
 		lastfileplayed.name = filePlayed;
 		lastfileplayed.lastplayed = "correct";
 		lastfilecollection.update(lastfileplayed);
@@ -113,16 +122,19 @@ function subNotifier() {
 		lastaudio = "none";
 		nextaudio = files_[0];
 	} else {
-		lastaudiorec = lastfilecollection.find({'lastplayed':'correct'});
-		console.log(lastaudiorec);
-		console.log("[TWITCHBOT EVENT] Last file have been played is : " + lastaudiorec.name);
+		//lastaudiorec = lastfilecollection.find({'lastplayed':'correct'});
+		lastaudiorec = lastfilecollection.get(1);
+		console.log("[TWITCHBOT EVENT] Last file to have been played is : " + lastaudiorec.name);
 		lastaudio = lastaudiorec.name;
-		nextaudio = getNextFileToPlay(lastaudiorec.name);
+		nextaudio = getNextFileToPlay(lastaudio);
 		console.log("[TWITCHBOT EVENT] Next file to be played is : " + nextaudio);		
 	}
 
 	//Pretend sub event has happened and play file
 	playFile(nextaudio);
+	
+	//Update database with filename played
+	updateDbWithFilePlayed(nextaudio);
 	
 	// Twitch library options
 	var options = {
