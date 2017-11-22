@@ -1,11 +1,14 @@
 // npm install tmi.js --save
 // npm install lokijs --save
-// npm install play --save
+// npm install node-aplay --save
+
 // Twitch library
 var tmi = require('tmi.js');
 var loki = require('lokijs');
 var fs = require('fs');
-var Sound = require('node-aplay');
+//var Sound = require('node-aplay');
+var play = require('audio-play');
+var load = require('audio-loader');
 var files_ = files_ || [];
 
 // Get list of files from the filesystem
@@ -76,6 +79,7 @@ function playFile(fileToPlay) {
 	console.log("[TWITCHBOT EVENT] Playing next file : " + nextFileToPlay);
 
 	//new Sound(nextFileToPlay).play();
+	load(nextFileToPlay).then(play);
 }
 
 function updateDbWithFilePlayed(filePlayed) {
