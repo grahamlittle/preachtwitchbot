@@ -1,0 +1,40 @@
+Installation Guide
+
+Dependencies
+
+1. Download and install NodeJS from : https://nodejs.org/en/download/
+2. Download and install Python from : https://www.python.org/downloads/ (version 2.7.14)
+	a. Please make sure to enable the option to add to classpath when instaling
+3. Download and install 7z (compression tool to de-compress MPlayer) (WINDOWS)
+4. Download MPlayer : https://sourceforge.net/projects/mplayerwin/ ( you need this to play the audio file, only on WINDOWS )
+	a. Install MPlayer wherever you want by right clicking the .7z file you donwloaded for MPlayer and then extract to desired location e.g d:/mplayerwin/
+	b. Add MPlayer to class path in Windows (https://www.computerhope.com/issues/ch000549.htm)
+
+App installation
+
+5. Extract the ZIP file i provided you to the location you want to install it e.g. d:/preachtwitchbot
+	a. should see something like : 
+	 	app.js
+	 	audiofiles
+	 	InstallationGuide.txt
+	 	LICENSE
+	 	...
+6. Go into the folder d:/preachtwitchbot/audiofiles (You can see the sample files i used for testing, you can remove these and put your own)
+7. Copy your audio files into this folder. Make sure the name format is something that will sort correctly i.e 00001-nameoffile.wav etc
+8. Go into the folder d:/preachtwitchbot in your command prompt
+9. Execute the following commands to install depedencies for the app (a = twitchapi, b = local json db, c = module to play audio files)
+	a. npm install tmi.js --save
+	b. npm install lokijs --save
+	c. npm install play-sound --save
+10. To start the app enter the following into the command prompt at d:/preachtwitchbot
+	a. node app.js
+
+- You will now see the app load up, it will first load all the files that are in the audiofiles list into list object
+- Next the app will connect to the Twitch API and to the Preachlfw channel
+- You will see the chat log streaming in the output of the command prompt.
+- Whenever you get a subscription event, you will see it in the output of the command prompt and the audio file will be played.
+
+- In the event that the app gets to the last audio file in the list it will start again from the beginning of the list.
+- This uses a twitch account to connect to the API, the account username/password is preachtwitchbot / xxx
+- The password this account uses to connect to the API is in the app.js file (so dont share with people unless you want to)
+	- username: "preachtwitchbot", password: "xxx"

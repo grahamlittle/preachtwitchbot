@@ -1,26 +1,24 @@
 // npm install tmi.js --save
 // npm install lokijs --save
-// npm install node-aplay --save
+// npm install play-sound --save
 
 // Twitch library
 var tmi = require('tmi.js');
 var loki = require('lokijs');
 var fs = require('fs');
-//var Sound = require('node-aplay');
-var play = require('audio-play');
-var load = require('audio-loader');
+var player = require('play-sound')(opts = {});
 var files_ = files_ || [];
 
 // Get list of files from the filesystem
-console.log("[TWITCHBOT EVENT] List files in application folder");
-fs.readdirSync('./testfiles/').forEach(file => {
-	if (!fs.statSync('./testfiles/'+file).isDirectory()){
-  		console.log("[TWITCHBOT EVENT] File name : " + file);
+console.log("[TWITCHBOT EVENT] GET LIST OF AUDIO FILES FROM LOCAL FOLDER");
+fs.readdirSync('./audiofiles/').forEach(file => {
+	if (!fs.statSync('./audiofiles/'+file).isDirectory()){
+//  		console.log("[TWITCHBOT EVENT] File name : " + file);
   		files_.push(file);
     }
 })
 files_.sort();
-console.log("[TWITCHBOT EVENT] AUDIO FILE LIST : " + files_);
+console.log("[TWITCHBOT EVENT] AUDIO FILE LIST CREATED");
 
 // Local storage options for last played file
 // Autosave disabled for now
@@ -55,7 +53,7 @@ function databaseInitialize() {
 	
   }
   
-  subNotifier();
+  main();
 };
 
 // With the lastFilePlayed find the index of that file and return the next file to play
@@ -74,12 +72,16 @@ function getNextFileToPlay(lastFilePlayed) {
 
 function playFile(fileToPlay) {
 
-	var nextFileToPlay = "./testfiles/"+fileToPlay;
+	var nextFileToPlay = "./audiofiles/"+fileToPlay;
 	
 	console.log("[TWITCHBOT EVENT] Playing next file : " + nextFileToPlay);
 
-	//new Sound(nextFileToPlay).play();
-	load(nextFileToPlay).then(play);
+	player.play(nextFileToPlay, function(err){
+	  if (err) {
+	  	console.log('Error playing audio file : ' + err);
+	  }
+	})
+
 }
 
 function updateDbWithFilePlayed(filePlayed) {
@@ -116,7 +118,6 @@ function updateDbWithFilePlayed(filePlayed) {
 function subNotifier() {
 	var lastfilecollection = db.getCollection("lastfileplayed");
 	var entryCount = lastfilecollection.count();
-	var now = new Date();
 	var lastaudio = "";
 	var nextaudio = "";
 
@@ -134,12 +135,18 @@ function subNotifier() {
 		console.log("[TWITCHBOT EVENT] Next file to be played is : " + nextaudio);		
 	}
 
+
 	//Pretend sub event has happened and play file
 	playFile(nextaudio);
-	
+
 	//Update database with filename played
 	updateDbWithFilePlayed(nextaudio);
-	
+}
+
+function main() {
+	// manual test call
+	subNotifier();
+
 	// Twitch library options
 	var options = {
 		options: {
@@ -175,6 +182,8 @@ function subNotifier() {
     	console.log("[TWITCHBOT EVENT] Subscription Event : " );
     	console.log("[TWITCHBOT EVENT] Channel : " + channel );
     	console.log("[TWITCHBOT EVENT] Username : " + username );
+    	
+    	subNotifier();
 	});
 }
 

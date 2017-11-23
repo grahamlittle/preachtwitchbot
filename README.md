@@ -20,6 +20,16 @@ as well as LokiJS for the client side JSON DB :
 npm install lokijs --save 
 ```
 
+as well as the sound module for playing our audio files: 
+
+```bash
+npm install play-sound --save
+```
+
 and of course Node.js
 
 https://nodejs.org/en/download/
+
+When i am running this in Windows i also had to download a CLI audio player, i chose MPlayer:
+
+https://sourceforge.net/projects/mplayerwin/
