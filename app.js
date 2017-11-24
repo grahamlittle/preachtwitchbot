@@ -136,7 +136,7 @@ function subNotifier() {
 	}
 
 
-	//Pretend sub event has happened and play file
+	//Play file
 	playFile(nextaudio);
 
 	//Update database with filename played
@@ -145,7 +145,7 @@ function subNotifier() {
 
 function main() {
 	// manual test call
-	subNotifier();
+	//subNotifier();
 
 	// Twitch library options
 	var options = {
@@ -158,7 +158,7 @@ function main() {
 		},
 		identity: {
 			username: "preachtwitchbot",
-			password: "xxx"
+			password: "oauth:kulps758b2ncnmrgriurb82to9j6jo"
 		},
 		channels: ["preachlfw"]
 	};
